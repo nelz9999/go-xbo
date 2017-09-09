@@ -31,12 +31,13 @@ type exponential struct {
 	count  int32
 	seed   float64
 	factor float64
-	stop   uint32
+	safe   bool
 }
 
-// NewExponentialBackOff defines a backoff that will increase the suggested
-// wait time with each subsequent attempt.
-func NewExponentialBackOff(initial time.Duration, increase float64, options ...ExponentialOption) (BackOff, error) {
+// NewExponential creates a BackOff that will increase the suggested
+// wait time with each subsequent attempt, restarting the sequence when a
+// reset is sent.
+func NewExponential(initial time.Duration, increase float64, options ...ExponentialOption) (BackOff, error) {
 	if initial <= 0 {
 		return nil, fmt.Errorf("initial must be greater than zero: %v", initial)
 	}
@@ -48,7 +49,6 @@ func NewExponentialBackOff(initial time.Duration, increase float64, options ...E
 		count:  -1,
 		seed:   float64(initial),
 		factor: 1.0 + increase,
-		stop:   0,
 	}
 
 	for _, opt := range options {
@@ -63,16 +63,21 @@ func NewExponentialBackOff(initial time.Duration, increase float64, options ...E
 
 func (x *exponential) Next(reset bool) (time.Duration, error) {
 	if reset {
-		atomic.StoreInt32(&x.count, -1)
-		return 0, nil
+		if x.safe {
+			atomic.StoreInt32(&x.count, -1)
+		} else {
+			x.count = -1
+		}
+		return ZeroDuration, nil
 	}
 
-	// Which attempt is this?
-	count := atomic.AddInt32(&x.count, 1)
-
-	// User may want us to stop after too many attempts
-	if x.stop > 0 && count >= int32(x.stop) {
-		return 0, ErrStop
+	// Figure out which attempt this is.
+	// TODO: This feels a little kludgey. :(
+	count := x.count + 1
+	if x.safe {
+		count = atomic.AddInt32(&x.count, 1)
+	} else {
+		x.count = count
 	}
 
 	// seed * (factor**count)
@@ -86,11 +91,11 @@ func (x *exponential) Next(reset bool) (time.Duration, error) {
 // ExponentialOption declares the functional options for changing behavior
 type ExponentialOption func(*exponential) error
 
-// ExponentialStop says the backoff should signal ErrStop after a sequence of
-// the given number of (un-reset) attempts.
-func ExponentialStop(attempts uint32) ExponentialOption {
+// ExponentialSafe is used to make sure the act of incrementing the
+// internal attempt counter is done in an atomic and concurrent-safe manner
+func ExponentialSafe(safe bool) ExponentialOption {
 	return ExponentialOption(func(x *exponential) error {
-		x.stop = attempts
+		x.safe = safe
 		return nil
 	})
 }

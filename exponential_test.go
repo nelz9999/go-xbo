@@ -27,12 +27,10 @@ import (
 )
 
 func TestExponentialHappyPath(t *testing.T) {
-	count := uint32(4)
 	expected := []time.Duration{1, 2, 4, 8}
-	x, err := NewExponentialBackOff(
+	x, err := NewExponential(
 		100*time.Millisecond,
 		1.0,
-		ExponentialStop(count),
 	)
 	if err != nil {
 		t.Fatalf("unexpected: %v", err)
@@ -51,40 +49,28 @@ func TestExponentialHappyPath(t *testing.T) {
 			}
 		}
 		// Make sure reset starts the whole thing over again
-		if ix == 0 {
-			dur, xerr := x.Next(true)
-			if xerr != nil {
-				t.Errorf("unexpected: %v", xerr)
-			}
-			if dur != 0 {
-				t.Errorf("expected 0: %s", dur)
-			}
+		dur, xerr := x.Next(true)
+		if xerr != nil {
+			t.Errorf("unexpected: %v", xerr)
 		}
-	}
-
-	_, err = x.Next(false)
-	if err != ErrStop {
-		t.Errorf("expected [%v]: %v", ErrStop, err)
-	}
-}
-
-func TestExponentialCheckInitial(t *testing.T) {
-	bads := []int64{-1, 0}
-	for _, bad := range bads {
-		b, err := NewExponentialBackOff(time.Duration(bad), 1.0)
-		if err == nil {
-			t.Errorf("expected error")
-		}
-		if b != nil {
-			t.Errorf("expected nil: %v", b)
+		if dur != 0 {
+			t.Errorf("expected 0: %s", dur)
 		}
 	}
 }
 
-func TestExponentialCheckIncrease(t *testing.T) {
-	bads := []float64{-1.0, math.NaN()}
-	for _, bad := range bads {
-		b, err := NewExponentialBackOff(1, bad)
+func TestExponentialCheckInputs(t *testing.T) {
+	inputs := []struct {
+		initial  time.Duration
+		increase float64
+	}{
+		{-1, 1.0},
+		{0, 1.0},
+		{1, -1.0},
+		{1, math.NaN()},
+	}
+	for _, input := range inputs {
+		b, err := NewExponential(input.initial, input.increase)
 		if err == nil {
 			t.Errorf("expected error")
 		}

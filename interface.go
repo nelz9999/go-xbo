@@ -29,6 +29,9 @@ import (
 // calculations say no further attempts should be made
 var ErrStop = fmt.Errorf("stop any further attempts")
 
+// ZeroDuration is what is returned when requesting a reset
+var ZeroDuration = time.Duration(0)
+
 // BackOff defines objects that will tell you how long
 // to wait between attempts
 type BackOff interface {
@@ -39,7 +42,7 @@ type BackOff interface {
 	// Sending a reset value of true means you want to
 	// start the sequence of values over again from the
 	// beginning. When being reset, it is customary to
-	// return a 0 duration.
+	// return ZeroDuration.
 	Next(reset bool) (time.Duration, error)
 }
 

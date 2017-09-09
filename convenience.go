@@ -22,23 +22,23 @@ package xbo
 
 import "time"
 
-// NewConstantBackOff will wait exactly as long as configured
-func NewConstantBackOff(d time.Duration) BackOff {
+// NewConstant creates a BackOff that will always return the configured duration
+func NewConstant(d time.Duration) BackOff {
 	return BackOffFunc(func(reset bool) (time.Duration, error) {
 		if reset {
-			return 0, nil
+			return ZeroDuration, nil
 		}
 		return d, nil
 	})
 }
 
-// NewZeroBackOff will always return 0 durations
-func NewZeroBackOff() BackOff {
-	return NewConstantBackOff(0)
+// NewZero creates a BackOff that will always return 0 durations
+func NewZero() BackOff {
+	return NewConstant(0)
 }
 
-// NewStopBackOff will return an ErrStop for all non-reset cases
-func NewStopBackOff() BackOff {
+// NewStop creates a BackOff that will return an ErrStop for all non-reset cases
+func NewStop() BackOff {
 	return BackOffFunc(func(reset bool) (time.Duration, error) {
 		if reset {
 			return 0, nil
