@@ -20,29 +20,58 @@
 
 package xbo
 
-import "time"
+import (
+	"testing"
+	"time"
+)
 
-// NewConstant creates a BackOff that will always return the configured duration
-func NewConstant(d time.Duration) BackOff {
-	return BackOffFunc(func(reset bool) (time.Duration, error) {
-		if reset {
-			return ZeroDuration, nil
+func TestConvenienceBackOffs(t *testing.T) {
+	// Testing each of the convenience BackOff types
+	testCases := []struct {
+		bo  BackOff
+		dur time.Duration
+		err error
+	}{
+		{
+			NewConstant(time.Minute),
+			time.Minute,
+			nil,
+		},
+		{
+			NewZero(),
+			ZeroDuration,
+			nil,
+		},
+		{
+			NewStop(),
+			ZeroDuration,
+			ErrStop,
+		},
+	}
+
+	// We want to test that each of the convenience BackOff types
+	// produce consistent output.
+	iters := []int{11, 3, 7}
+	for _, tc := range testCases {
+		for _, iter := range iters {
+			for ix := 0; ix < iter; ix++ {
+				dur, err := tc.bo.Next(false)
+				if dur != tc.dur {
+					t.Errorf("expected %s: %s", tc.dur, dur)
+				}
+				if err != tc.err {
+					t.Errorf("expected %v: %v", tc.err, err)
+				}
+			}
+
+			// Also test that reset gets the expected standard results
+			dur, err := tc.bo.Next(true)
+			if dur != ZeroDuration {
+				t.Errorf("expected %s: %s", ZeroDuration, dur)
+			}
+			if err != nil {
+				t.Errorf("unexpected: %v", err)
+			}
 		}
-		return d, nil
-	})
-}
-
-// NewZero creates a BackOff that will always return 0 durations
-func NewZero() BackOff {
-	return NewConstant(0)
-}
-
-// NewStop creates a BackOff that will return an ErrStop for all non-reset cases
-func NewStop() BackOff {
-	return BackOffFunc(func(reset bool) (time.Duration, error) {
-		if reset {
-			return ZeroDuration, nil
-		}
-		return ZeroDuration, ErrStop
-	})
+	}
 }
