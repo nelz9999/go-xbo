@@ -63,29 +63,33 @@ func NewExponential(initial time.Duration, increase float64, options ...Exponent
 
 func (x *exponential) Next(reset bool) (time.Duration, error) {
 	if reset {
-		if x.safe {
-			atomic.StoreInt32(&x.count, -1)
-		} else {
-			x.count = -1
-		}
+		x.zero()
 		return ZeroDuration, nil
 	}
 
-	// Figure out which attempt this is.
-	// TODO: This feels a little kludgey. :(
-	count := x.count + 1
-	if x.safe {
-		count = atomic.AddInt32(&x.count, 1)
-	} else {
-		x.count = count
-	}
-
-	// seed * (factor**count)
+	// seed * (factor**exponent)
 	// TODO: Check for, and error, if we are overflowing int64
-	multiplier := math.Pow(x.factor, float64(count))
+	exponent := x.incr()
+	multiplier := math.Pow(x.factor, float64(exponent))
 	result := time.Duration(x.seed * multiplier)
 
 	return result, nil
+}
+
+func (x *exponential) zero() {
+	if x.safe {
+		atomic.StoreInt32(&x.count, -1)
+		return
+	}
+	x.count = -1
+}
+
+func (x *exponential) incr() int32 {
+	if x.safe {
+		return atomic.AddInt32(&x.count, 1)
+	}
+	x.count++
+	return x.count
 }
 
 // ExponentialOption declares the functional options for changing behavior
