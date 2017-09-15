@@ -213,7 +213,7 @@ func TestJitterRandomish(t *testing.T) {
 		} else {
 			allMatch = false
 		}
-		t.Logf("I: %s; O: %s\n", d1, do)
+		// t.Logf("I: %s; O: %s\n", d1, do)
 	}
 
 	if allMatch {
