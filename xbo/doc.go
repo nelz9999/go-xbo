@@ -23,6 +23,6 @@
 // It provides much of the same functionality as several of the other open
 // source implementations (https://github.com/cenkalti/backoff;
 // https://github.com/jpillora/backoff),
-// but with an increased focus on being composable, and to provide
-// concurrency-safe options.
+// but with an increased focus on being composable and extensible, and to
+// provide concurrency-safe options.
 package xbo
