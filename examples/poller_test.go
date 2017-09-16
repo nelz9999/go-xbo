@@ -71,7 +71,7 @@ func TestExamplePoller(t *testing.T) {
 	// But stop if there are more than 10 errors in a row
 	bo = xbo.MaxAttempts(bo, 10, false)
 
-	// This convenince method will make sure to listen to a
+	// This convenience method will make sure to listen to a
 	// Context for cancellation as well.
 	w, err := xbo.NewWaiter(bo)
 	if err != nil {

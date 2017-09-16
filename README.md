@@ -1,4 +1,4 @@
-[![GoDoc](https://godoc.org/github.com/nelz9999/go-xbo?status.svg)](https://godoc.org/github.com/nelz9999/go-xbo/xbo)
+[![GoDoc](https://godoc.org/github.com/nelz9999/go-xbo?status.svg)](https://godoc.org/github.com/nelz9999/go-xbo/xbo) [![Go Report Card](https://goreportcard.com/badge/nelz9999/go-xbo)](https://goreportcard.com/report/nelz9999/go-xbo)
 
 # go-xbo
 Package xbo is "yet another eXponential Back Off implementation".
