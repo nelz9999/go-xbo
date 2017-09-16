@@ -1,4 +1,4 @@
-# go-xbo
+# go-xbo [![GoDoc](https://godoc.org/github.com/nelz9999/go-xbo?status.svg)](https://godoc.org/github.com/nelz9999/go-xbo)
 Package xbo is "yet another eXponential Back Off implementation".
 
 It provides much of the same functionality as several of the other open
