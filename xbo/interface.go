@@ -33,7 +33,7 @@ var ErrStop = fmt.Errorf("stop any further attempts")
 var ZeroDuration = time.Duration(0)
 
 // BackOff defines objects that will tell you how long
-// to wait between attempts
+// to wait between repeated attempts
 type BackOff interface {
 	// Next returns the amount of time that should be
 	// waited until the next attempt.
@@ -41,16 +41,16 @@ type BackOff interface {
 	// that no further attempts should be made
 	// Sending a reset value of true means you want to
 	// start the sequence of values over again from the
-	// beginning. When being reset, it is customary to
-	// return ZeroDuration.
+	// beginning. When being reset, it is customary for
+	// implementations to return ZeroDuration.
 	Next(reset bool) (time.Duration, error)
 }
 
-// BackOffFunc is an adapter so a function can implement
-// the BackOff interface
+// The BackOffFunc type is an adapter to allow the use of ordinary functions
+// as a BackOff.
 type BackOffFunc func(bool) (time.Duration, error)
 
-// Next fulfills the BackOff interface
+// Next calls f(reset)
 func (f BackOffFunc) Next(reset bool) (time.Duration, error) {
 	return f(reset)
 }

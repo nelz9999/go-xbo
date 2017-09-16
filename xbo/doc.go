@@ -18,41 +18,11 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+// Package xbo is "yet another eXponential Back Off implementation".
+//
+// It provides much of the same functionality as several of the other open
+// source implementations (https://github.com/cenkalti/backoff;
+// https://github.com/jpillora/backoff),
+// but with an increased focus on being composable, and to provide
+// concurrency-safe options.
 package xbo
-
-import (
-	"context"
-	"fmt"
-	"time"
-)
-
-// NewWaiter produces a Waiter based off an underlying BackOff.
-func NewWaiter(bo BackOff) (*Waiter, error) {
-	if bo == nil {
-		return nil, fmt.Errorf("backoff must be defined")
-	}
-	return &Waiter{bo: bo}, nil
-}
-
-// Waiter is a wrapper around a BackOff that will block
-// execution for the amount of time dictated by that BackOff.
-type Waiter struct {
-	bo BackOff
-}
-
-// Wait will interrogate the underlying BackOff for the expected
-// duration, and will then block for that amount of time. The user may send
-// in a Context for signalling early cancellation.
-func (w Waiter) Wait(ctx context.Context, reset bool) error {
-	dur, err := w.bo.Next(reset)
-	if err != nil {
-		return err
-	}
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-time.After(dur):
-		// Happy path
-	}
-	return nil
-}

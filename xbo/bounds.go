@@ -32,7 +32,7 @@ var ErrLowBound = fmt.Errorf("boundary condition too low")
 
 // MaxAttempts is a BackOff decorator that will short-circuit the underlying
 // BackOff if there have been too many un-reset requests in a row.
-// This can be made concurrent-safe by setting the safe boolean to true
+// This can be made concurrent-safe by setting the safe value to true
 func MaxAttempts(bo BackOff, bound uint32, safe bool) BackOff {
 	count := uint32(0)
 	return BackOffFunc(func(reset bool) (time.Duration, error) {

@@ -22,7 +22,11 @@ package xbo
 
 import "time"
 
-// NewConstant creates a BackOff that will always return the configured duration
+// NewConstant creates a BackOff that will always return the configured
+// duration (except during resets, where the convention is to return
+// ZeroDuration).
+//
+// This is useful for testing.
 func NewConstant(d time.Duration) BackOff {
 	return BackOffFunc(func(reset bool) (time.Duration, error) {
 		if reset {
@@ -32,12 +36,17 @@ func NewConstant(d time.Duration) BackOff {
 	})
 }
 
-// NewZero creates a BackOff that will always return 0 durations
+// NewZero creates a BackOff that will always return 0 durations.
+//
+// This is useful for testing.
 func NewZero() BackOff {
 	return NewConstant(0)
 }
 
-// NewStop creates a BackOff that will return an ErrStop for all non-reset cases
+// NewStop creates a BackOff that will return an ErrStop for all
+// non-reset cases.
+//
+// This is useful for testing.
 func NewStop() BackOff {
 	return BackOffFunc(func(reset bool) (time.Duration, error) {
 		if reset {

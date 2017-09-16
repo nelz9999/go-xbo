@@ -28,8 +28,9 @@ import (
 	"time"
 )
 
-// JitterRand describes the one function that we need from the
-// math/rand.Rand type.
+// JitterRand isolates the one function that we need from the
+// math/rand.Rand type. The user may choose to implement their own
+// randomization source, as long as it fulfills this interface.
 type JitterRand interface {
 	Int63n(n int64) int64
 }
@@ -44,7 +45,9 @@ type jitter struct {
 // NewJitter creates a decoration around an underlying BackOff, which adds
 // a bit of randomness to the durations returned. This helps systems avoid
 // "thundering herd" problems that can happen when there is accidental
-// synchronization
+// synchronization.
+//
+// Use the functional JitterOptions to set other aspects of the behavior.
 func NewJitter(bo BackOff, options ...JitterOption) (BackOff, error) {
 	if bo == nil {
 		return nil, fmt.Errorf("backoff source is required")
@@ -107,12 +110,13 @@ func (j *jitter) Next(reset bool) (time.Duration, error) {
 	return time.Duration(min + offset), nil
 }
 
-// JitterOption declares the functional options for changing behavior
+// JitterOption declares the functional options for changing behavior on
+// the created jitter BackOff.
 type JitterOption func(*jitter) error
 
 // JitterRandomizer gives the consumer the option of specifying the
 // source of randomness for calculations. The JitterRand interface
-// easily applies to the math/rand.Rand type.
+// directly applies to the math/rand.Rand type.
 func JitterRandomizer(r JitterRand) JitterOption {
 	return JitterOption(func(j *jitter) error {
 		if r == nil {
@@ -123,8 +127,8 @@ func JitterRandomizer(r JitterRand) JitterOption {
 	})
 }
 
-// JitterUnder allows the consumer to define the maximum percent of reduction
-// applied to the underlying duration.
+// JitterUnder option allows the consumer to define the maximum percent
+// of reduction applied to the duration delivered by the underlying BackOff.
 func JitterUnder(percent uint8) JitterOption {
 	return JitterOption(func(j *jitter) error {
 		if percent > 100 {
@@ -135,8 +139,8 @@ func JitterUnder(percent uint8) JitterOption {
 	})
 }
 
-// JitterOver allows the consumer to define the maximum percent of increase
-// applied to the underlying duration.
+// JitterOver option allows the consumer to define the maximum percent
+// of increase applied to the duration delivered by the underlying BackOff.
 func JitterOver(percent uint8) JitterOption {
 	return JitterOption(func(j *jitter) error {
 		if percent > 100 {

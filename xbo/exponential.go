@@ -37,6 +37,8 @@ type exponential struct {
 // NewExponential creates a BackOff that will increase the suggested
 // wait time with each subsequent attempt, restarting the sequence when a
 // reset is sent.
+//
+// Use the functional ExponentialOption to set other aspects of the behavior.
 func NewExponential(initial time.Duration, increase float64, options ...ExponentialOption) (BackOff, error) {
 	if initial <= 0 {
 		return nil, fmt.Errorf("initial must be greater than zero: %v", initial)
@@ -61,6 +63,7 @@ func NewExponential(initial time.Duration, increase float64, options ...Exponent
 	return result, nil
 }
 
+// Next conforms to the BackOff interface
 func (x *exponential) Next(reset bool) (time.Duration, error) {
 	if reset {
 		x.zero()
@@ -92,11 +95,12 @@ func (x *exponential) incr() int32 {
 	return x.count
 }
 
-// ExponentialOption declares the functional options for changing behavior
+// ExponentialOption declares the functional options for changing behavior on
+// the created exponential BackOff.
 type ExponentialOption func(*exponential) error
 
 // ExponentialSafe is used to make sure the act of incrementing the
-// internal attempt counter is done in an atomic and concurrent-safe manner
+// internal attempt counter is done in an atomic and concurrent-safe manner.
 func ExponentialSafe(safe bool) ExponentialOption {
 	return ExponentialOption(func(x *exponential) error {
 		x.safe = safe
