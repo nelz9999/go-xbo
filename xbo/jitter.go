@@ -106,7 +106,8 @@ func (j *jitter) Next(reset bool) (time.Duration, error) {
 	max := (dur.Nanoseconds() * int64(100+j.over)) / 100
 
 	// Add in a dash of randomness, et voila!
-	offset := j.r.Int63n(max - min)
+	// (Add one, because result range does not include the max number.)
+	offset := j.r.Int63n(max - min + 1)
 	return time.Duration(min + offset), nil
 }
 

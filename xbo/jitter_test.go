@@ -69,7 +69,8 @@ func (f randomFunc) Int63n(n int64) int64 {
 
 func Topper() JitterRand {
 	return randomFunc(func(n int64) int64 {
-		return n
+		// Return range is [0,n)
+		return n - 1
 	})
 }
 
