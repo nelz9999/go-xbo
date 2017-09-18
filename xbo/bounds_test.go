@@ -199,7 +199,92 @@ func TestElapsed(t *testing.T) {
 	}
 }
 
+func TestMaxAttemptsShortCircuit(t *testing.T) {
+	// Ensure that when the max attempts are triggered,
+	// we don't actually hit the underlying BackOff (i.e. short-circuit).
+	// Not sure if/when this might be useful, but it was asserted so why
+	// not test it?!? ;)
+
+	// It does feel a bit tautoligical to be testin MaxAttempts by
+	// using another MaxAttempts... But I do believe the logic is sound.
+	expected := time.Second
+	under := MaxAttempts(NewConstant(expected), 2, false)
+	bo := MaxAttempts(under, 1, false)
+
+	// We expect one good result out of the top layer
+	dur, err := bo.Next(false)
+	if err != nil {
+		t.Errorf("unexpected: %v", err)
+	}
+	if dur != expected {
+		t.Errorf("expected %v: %v", expected, dur)
+	}
+
+	// But any further attempts on the top layer, and we expect
+	// to receive ErrStop
+	for ix := 0; ix < 5; ix++ {
+		dur, err = bo.Next(false)
+		if dur != ZeroDuration {
+			t.Errorf("expected %v: %v", ZeroDuration, dur)
+		}
+		if err != ErrStop {
+			t.Errorf("expected %v: %v", ErrStop, err)
+		}
+	}
+
+	// HOWEVER, due to the short-circuit nature of the top layer,
+	// we expect the underlying BackOff to still have ONE good
+	// request left in it.
+	dur, err = under.Next(false)
+	if err != nil {
+		t.Errorf("unexpected: %v", err)
+	}
+	if dur != expected {
+		t.Errorf("expected %v: %v", expected, dur)
+	}
+}
+
+func TestElapsedShortCircuit(t *testing.T) {
+	// Ensure that when too much time has passed,
+	// we don't actually hit the underlying BackOff (i.e. short-circuit).
+	expected := time.Second
+	under := MaxAttempts(NewConstant(expected), 2, false)
+	bound := 100 * time.Millisecond
+	bo := Elapsed(under, bound)
+
+	// We expect one good result out of the top layer
+	dur, err := bo.Next(false)
+	if err != nil {
+		t.Errorf("unexpected: %v", err)
+	}
+	if dur != expected {
+		t.Errorf("expected %v: %v", expected, dur)
+	}
+
+	// After waiting too much time, any further attempts on the top layer,
+	// and we expect to receive ErrStop
+	time.Sleep(bound)
+	for ix := 0; ix < 5; ix++ {
+		dur, err = bo.Next(false)
+		if dur != ZeroDuration {
+			t.Errorf("expected %v: %v", ZeroDuration, dur)
+		}
+		if err != ErrStop {
+			t.Errorf("expected %v: %v", ErrStop, err)
+		}
+	}
+
+	// HOWEVER, due to the short-circuit nature of the top layer,
+	// we expect the underlying BackOff to still have ONE good
+	// request left in it.
+	dur, err = under.Next(false)
+	if err != nil {
+		t.Errorf("unexpected: %v", err)
+	}
+	if dur != expected {
+		t.Errorf("expected %v: %v", expected, dur)
+	}
+}
+
 // TODO: more tests
 // TestMaxAttemptsSafe
-// TestMaxAttemptsShortCircuit
-// TestElapsedShortCircuit
