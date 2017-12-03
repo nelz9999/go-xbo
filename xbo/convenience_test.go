@@ -47,6 +47,21 @@ func TestConvenienceBackOffs(t *testing.T) {
 			ZeroDuration,
 			ErrStop,
 		},
+		{
+			NewLoop([]time.Duration{}, true),
+			ZeroDuration,
+			ErrStop,
+		},
+		{
+			NewLimit([]time.Duration{}, true),
+			ZeroDuration,
+			ErrStop,
+		},
+		{
+			NewEcho([]time.Duration{}, true),
+			ZeroDuration,
+			ErrStop,
+		},
 	}
 
 	// We want to test that each of the convenience BackOff types
