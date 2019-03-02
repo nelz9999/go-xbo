@@ -1,4 +1,4 @@
-// Copyright © 2017 Nelz
+// Copyright © 2017-2019 Nelz
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,36 +21,17 @@
 package xbo
 
 import (
-	"fmt"
+	"context"
 	"time"
 )
 
-// ErrStop is the sentinel value that is returned when the
-// calculations say no further attempts should be made
-var ErrStop = fmt.Errorf("stop any further attempts")
-
-// ZeroDuration is what is returned when requesting a reset
-var ZeroDuration = time.Duration(0)
-
-// BackOff defines objects that will tell you how long
-// to wait between repeated attempts
-type BackOff interface {
-	// Next returns the amount of time that should be
-	// waited until the next attempt.
-	// If an xbo.ErrStop is returned, that is the signal
-	// that no further attempts should be made
-	// Sending a reset value of true means you want to
-	// start the sequence of values over again from the
-	// beginning. When being reset, it is customary for
-	// implementations to return ZeroDuration.
-	Next(reset bool) (time.Duration, error)
-}
-
-// The BackOffFunc type is an adapter to allow the use of ordinary functions
-// as a BackOff.
-type BackOffFunc func(bool) (time.Duration, error)
-
-// Next calls f(reset)
-func (f BackOffFunc) Next(reset bool) (time.Duration, error) {
-	return f(reset)
+func validator() BackOff {
+	return BackOffFunc(func(ctx context.Context, attempt int) (d time.Duration, err error) {
+		if ctx.Err() != nil {
+			err = ctx.Err()
+		} else if attempt < 0 {
+			err = ErrInvalid
+		}
+		return ZeroDuration, err
+	})
 }

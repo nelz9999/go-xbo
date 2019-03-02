@@ -1,4 +1,4 @@
-// Copyright © 2017 Nelz
+// Copyright © 2017-2019 Nelz
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,44 +21,34 @@
 package xbo
 
 import (
+	"context"
 	"testing"
 	"time"
 )
 
-func TestConvenienceBackOffs(t *testing.T) {
+func TestConveniences(t *testing.T) {
 	// Testing each of the convenience BackOff types
 	testCases := []struct {
-		bo  BackOff
-		dur time.Duration
-		err error
+		name string
+		bo   BackOff
+		dur  time.Duration
+		err  error
 	}{
 		{
+			"const",
 			NewConstant(time.Minute),
 			time.Minute,
 			nil,
 		},
 		{
+			"zero",
 			NewZero(),
 			ZeroDuration,
 			nil,
 		},
 		{
+			"stop",
 			NewStop(),
-			ZeroDuration,
-			ErrStop,
-		},
-		{
-			NewLoop([]time.Duration{}, true),
-			ZeroDuration,
-			ErrStop,
-		},
-		{
-			NewLimit([]time.Duration{}, true),
-			ZeroDuration,
-			ErrStop,
-		},
-		{
-			NewEcho([]time.Duration{}, true),
 			ZeroDuration,
 			ErrStop,
 		},
@@ -66,11 +56,11 @@ func TestConvenienceBackOffs(t *testing.T) {
 
 	// We want to test that each of the convenience BackOff types
 	// produce consistent output.
-	iters := []int{11, 3, 7}
+	attempts := []int{0, 11, 3, 7}
 	for _, tc := range testCases {
-		for _, iter := range iters {
-			for ix := 0; ix < iter; ix++ {
-				dur, err := tc.bo.Next(false)
+		t.Run(tc.name, func(t *testing.T) {
+			for _, attempt := range attempts {
+				dur, err := tc.bo.Calc(context.Background(), attempt)
 				if dur != tc.dur {
 					t.Errorf("expected %s: %s", tc.dur, dur)
 				}
@@ -78,15 +68,6 @@ func TestConvenienceBackOffs(t *testing.T) {
 					t.Errorf("expected %v: %v", tc.err, err)
 				}
 			}
-
-			// Also test that reset gets the expected standard results
-			dur, err := tc.bo.Next(true)
-			if dur != ZeroDuration {
-				t.Errorf("expected %s: %s", ZeroDuration, dur)
-			}
-			if err != nil {
-				t.Errorf("unexpected: %v", err)
-			}
-		}
+		})
 	}
 }

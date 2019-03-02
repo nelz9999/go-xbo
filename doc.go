@@ -1,4 +1,4 @@
-// Copyright © 2017 Nelz
+// Copyright © 2017-2019 Nelz
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,40 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+// Package xbo is "yet another eXponential Back Off implementation".
+//
+// It provides much of the same functionality as several of the other open
+// source implementations (https://github.com/cenkalti/backoff;
+// https://github.com/jpillora/backoff),
+// but with an increased focus on being composable and extensible, and to
+// provide concurrency-safe options.
+//
+// The v1 to v2 evolution was inspired by the work done in
+// https://github.com/gojektech/heimdall#custom-retry-mechanisms
 package xbo
-
-import "time"
-
-// NewConstant creates a BackOff that will always return the configured
-// duration (except during resets, where the convention is to return
-// ZeroDuration).
-//
-// This is useful for testing.
-func NewConstant(d time.Duration) BackOff {
-	return BackOffFunc(func(reset bool) (time.Duration, error) {
-		if reset {
-			return ZeroDuration, nil
-		}
-		return d, nil
-	})
-}
-
-// NewZero creates a BackOff that will always return 0 durations.
-//
-// This is useful for testing.
-func NewZero() BackOff {
-	return NewConstant(0)
-}
-
-// NewStop creates a BackOff that will return an ErrStop for all
-// non-reset cases.
-//
-// This is useful for testing.
-func NewStop() BackOff {
-	return BackOffFunc(func(reset bool) (time.Duration, error) {
-		if reset {
-			return ZeroDuration, nil
-		}
-		return ZeroDuration, ErrStop
-	})
-}

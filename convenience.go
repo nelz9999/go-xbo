@@ -1,4 +1,4 @@
-// Copyright © 2017 Nelz
+// Copyright © 2017-2019 Nelz
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,11 +18,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-// Package xbo is "yet another eXponential Back Off implementation".
-//
-// It provides much of the same functionality as several of the other open
-// source implementations (https://github.com/cenkalti/backoff;
-// https://github.com/jpillora/backoff),
-// but with an increased focus on being composable and extensible, and to
-// provide concurrency-safe options.
 package xbo
+
+import (
+	"context"
+	"time"
+)
+
+// NewConstant creates a BackOff that will always return the configured
+// duration
+func NewConstant(d time.Duration) BackOff {
+	v := validator()
+	return BackOffFunc(func(ctx context.Context, attempt int) (time.Duration, error) {
+		z, err := v.Calc(ctx, attempt)
+		if err != nil {
+			return z, err
+		}
+		return d, nil
+	})
+}
+
+// NewZero creates a BackOff that will always return 0 durations.
+func NewZero() BackOff {
+	return NewConstant(0)
+}
+
+// NewStop creates a BackOff that will always return an ErrStop
+// for all valid requests.
+func NewStop() BackOff {
+	v := validator()
+	return BackOffFunc(func(ctx context.Context, attempt int) (time.Duration, error) {
+		z, err := v.Calc(ctx, attempt)
+		if err != nil {
+			return z, err
+		}
+		return ZeroDuration, ErrStop
+	})
+}
